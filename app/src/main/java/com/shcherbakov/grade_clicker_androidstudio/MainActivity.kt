@@ -4,26 +4,44 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import com.shcherbakov.grade_clicker_androidstudio.ui.theme.Grade_Clicker_androidstudioTheme
+import androidx.compose.ui.unit.dp
+import com.shcherbakov.grade_clicker_androidstudio.data.Datasource
+import com.shcherbakov.grade_clicker_androidstudio.model.Grade
+import com.shcherbakov.grade_clicker_androidstudio.ui.theme.GradeClickerTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            Grade_Clicker_androidstudioTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+            GradeClickerTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    GradeClickerApp()
                 }
             }
         }
@@ -31,17 +49,94 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
+fun GradeClickerApp(
+    grades: List<Grade> = Datasource().gradeList
+) {
+    var points by remember { mutableStateOf(0) }
+    var clicks by remember { mutableStateOf(0) }
+
+    val currentGrade = getCurrentGrade(points, grades)
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(dimensionResource(R.dimen.padding_medium)),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = stringResource(R.string.app_name),
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        Image(
+            painter = painterResource(currentGrade.imageId),
+            contentDescription = stringResource(R.string.current_grade),
+            modifier = Modifier
+                .padding(dimensionResource(R.dimen.padding_medium))
+                .clickable {
+                    points += currentGrade.pointsPerClick
+                    clicks++
+                }
+        )
+
+        TransactionInfo(
+            points = points,
+            clicks = clicks
+        )
+    }
+}
+
+@Composable
+fun TransactionInfo(
+    points: Int,
+    clicks: Int
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(dimensionResource(R.dimen.padding_medium))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+        ) {
+            Text(
+                text = "${stringResource(R.string.points_earned)}: $points",
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+        ) {
+            Text(
+                text = "${stringResource(R.string.total_clicks)}: $clicks",
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
+    }
+}
+
+fun getCurrentGrade(points: Int, grades: List<Grade>): Grade {
+    var currentGrade = grades.first()
+    for (grade in grades) {
+        if (points >= grade.threshold) {
+            currentGrade = grade
+        }
+    }
+    return currentGrade
 }
 
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
-    Grade_Clicker_androidstudioTheme {
-        Greeting("Android")
+fun GradeClickerAppPreview() {
+    GradeClickerTheme {
+        GradeClickerApp()
     }
 }
